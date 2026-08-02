@@ -1,0 +1,10 @@
+framework:
+    cache:
+        prefix_seed: boilerpilate/orders
+        app: cache.adapter.redis
+        default_redis_provider: '%env(resolve:CACHE_URL)%'
+
+when@test:
+    framework:
+        cache:
+            app: cache.adapter.filesystem

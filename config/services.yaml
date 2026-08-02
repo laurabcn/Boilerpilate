@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
+
+parameters:
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/Domain/'
+            - '../src/Shared/Domain/'
+            - '../src/Shared/Application/'
+            - '../src/Kernel.php'
+
+    App\Domain\Order\Repository\OrderRepositoryInterface:
+        alias: App\Infrastructure\Persistence\Doctrine\Repository\DoctrineOrderRepository
+
+    App\Application\Order\Port\OrderCacheInterface:
+        alias: App\Infrastructure\Cache\Redis\RedisOrderCache
+
+    App\Infrastructure\Cache\Redis\RedisOrderCache:
+        arguments:
+            $cache: '@cache.app'
+
+    App\Shared\Application\Command\CommandBus:
+        alias: App\Shared\Infrastructure\Bus\TransactionalCommandBus
+
+    App\Shared\Infrastructure\Bus\TransactionalCommandBus:
+        arguments:
+            $inner: '@App\Shared\Infrastructure\Bus\InMemoryCommandBus'
+
+    App\Shared\Application\Query\QueryBus:
+        alias: App\Shared\Infrastructure\Bus\InMemoryQueryBus
+
+    App\Shared\Application\Event\EventBus:
+        alias: App\Shared\Infrastructure\Bus\SymfonyEventBus
+
+    _instanceof:
+        App\Shared\Application\Command\CommandHandler:
+            tags: [app.command_handler]
+        App\Shared\Application\Query\QueryHandler:
+            tags: [app.query_handler]
+
+    App\Shared\Infrastructure\Bus\InMemoryCommandBus:
+        arguments:
+            $handlers: !tagged_iterator app.command_handler
+
+    App\Shared\Infrastructure\Bus\InMemoryQueryBus:
+        arguments:
+            $handlers: !tagged_iterator app.query_handler
